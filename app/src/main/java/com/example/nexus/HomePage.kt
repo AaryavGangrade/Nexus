@@ -1,5 +1,6 @@
 package com.example.nexus
 
+import com.google.accompanist.flowlayout.FlowRow
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,12 +35,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,15 +60,11 @@ import java.util.Calendar
 @Composable
 fun HomePage(navController: NavHostController) {
     var isLoading by remember { mutableStateOf(false) }
-    var apiLink by remember { mutableStateOf("") }
+    var apiLink by remember { mutableStateOf("https://detailed-mv-creates-returning.trycloudflare.com") }
     var skills by remember { mutableStateOf("") }
     var facultyList by remember { mutableStateOf(listOf<FacultyMember>()) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val listState = rememberLazyListState()
-
-    // 1. Dynamic Greeting based on time of day
-    val greetingMessage = getGreetingMessage()
 
     val pdfLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -79,7 +84,7 @@ fun HomePage(navController: NavHostController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF4A5CFF))
+            .background(Color(0xFF262626)) // Dark background
     ) {
         Column(
             modifier = Modifier
@@ -88,7 +93,7 @@ fun HomePage(navController: NavHostController) {
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = greetingMessage, // Dynamic greeting
+                text = getGreetingMessage(),
                 color = Color.White,
                 fontSize = 34.sp,
                 fontWeight = FontWeight.Bold,
@@ -96,92 +101,87 @@ fun HomePage(navController: NavHostController) {
                     .padding(bottom = 8.dp, top = 16.dp)
                     .align(Alignment.CenterHorizontally)
             )
-        }
 
-        Card(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)) // Rounded corners
-                .shadow(16.dp, RoundedCornerShape(32.dp)), // Shadow effect
-            colors = CardDefaults.cardColors(containerColor = Color.White)
-        ) {
             LazyColumn(
                 modifier = Modifier
                     .padding(32.dp)
                     .fillMaxSize()
                     .padding(bottom = 100.dp),
-                state = listState, // Support for sticky header
                 verticalArrangement = Arrangement.spacedBy(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
                     Spacer(modifier = Modifier.height(24.dp))
-
-                    // 2. Shrink upload button after results
-                    AnimatedVisibility(
-                        visible = skills.isEmpty() && facultyList.isEmpty(),
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(if (skills.isEmpty() && facultyList.isEmpty()) 120.dp else 60.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(
+                                brush = Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFFFF69B4), Color(0xFF8A2BE2)) // Pink to Purple gradient
+                                )
+                            )
                     ) {
                         Button(
                             onClick = { pdfLauncher.launch("application/pdf") },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4A5CFF)),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF222222)), // Dark background to match the theme
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .height(120.dp)
+                                .fillMaxSize()
+                                .padding(1.dp) // This creates a thin border effect
                         ) {
                             Text(
                                 "Upload PDF",
                                 color = Color.White,
-                                fontSize = 32.sp,
+                                fontSize = if (skills.isEmpty() && facultyList.isEmpty()) 32.sp else 18.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(24.dp))
-
+                item {
                     if (isLoading) {
-                        // 9. Loading skeleton placeholder
-                        CircularProgressIndicator(color = Color(0xFF4A5CFF))
-                    }
-
-                    // Display skills if available
-                    if (skills.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Skills:",
-                            color = Color(0xFF4A5CFF),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                        Text(
-                            text = skills,
-                            color = Color.Black,
-                            fontSize = 16.sp,
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
-                    }
-
-                    // 10. Sticky header for faculty list
-                    if (facultyList.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = "Top Faculty Matches:",
-                            color = Color(0xFF4A5CFF),
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
+                        CircularProgressIndicator(color = Color(0xFF673AB7)) // Use purple accent color
                     }
                 }
 
-                // 3. Animate faculty cards
-                items(facultyList) { faculty ->
-                    FacultyCard(faculty)
+                if (skills.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Skills:",
+                            color = Color(0xFFBB86FC), // Light purple for labels
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
+                        FlowRow(
+                            mainAxisSpacing = 8.dp,
+                            crossAxisSpacing = 8.dp,
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            skills.split(",").forEach { skill ->
+                                SkillTag(skill.trim())
+                            }
+                        }
+                    }
+                }
+
+                if (facultyList.isNotEmpty()) {
+                    item {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "Top Faculty Matches:",
+                            color = Color(0xFFBB86FC),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Start)
+                        )
+                    }
+                    items(facultyList) { faculty ->
+                        FacultyCard(faculty)
+                    }
                 }
 
                 if (skills.isEmpty() && facultyList.isEmpty()) {
@@ -193,26 +193,104 @@ fun HomePage(navController: NavHostController) {
                             label = { Text("API Link") },
                             modifier = Modifier.fillMaxWidth(),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = Color(0xFF4A5CFF),
-                                focusedLabelColor = Color(0xFF4A5CFF)
+                                focusedBorderColor = Color(0xFFBB86FC),
+                                focusedLabelColor = Color(0xFFBB86FC)
                             )
                         )
                     }
                 }
             }
         }
-    }
 
-    // 7. Icons in bottom navigation bar
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 16.dp),
-        contentAlignment = Alignment.BottomCenter
-    ) {
-        BottomNavigationBar(navController)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = 16.dp),
+            contentAlignment = Alignment.BottomCenter
+        ) {
+            BottomNavigationBar(navController)
+        }
     }
 }
+
+@Composable
+fun SkillTag(skill: String) {
+    Box(
+        modifier = Modifier
+            .background(Color(0xFF6200EE), shape = RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        Text(text = skill, color = Color.White, fontSize = 14.sp)
+    }
+}
+
+@Composable
+fun FacultyCard(faculty: FacultyMember) {
+    OutlinedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color(0xFF333333)), // Dark gray background
+        border = BorderStroke(
+            width = 2.dp,
+            brush = Brush.horizontalGradient(
+                colors = listOf(Color(0xFFFF69B4), Color(0xFF8A2BE2)) // Pink to Purple gradient
+            )
+        ),
+        elevation = CardDefaults.outlinedCardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(24.dp)) {
+            Text(
+                text = faculty.name,
+                color = Color(0xFFBB86FC), // Light purple
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "Employee ID: ${faculty.employeeId}",
+                color = Color.Gray,
+                fontSize = 16.sp
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Similarity Score: ${faculty.similarityScore}",
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+@Composable
+fun UploadButton(onClick: () -> Unit, isDataLoaded: Boolean) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF222222) // Dark background to match the theme
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (isDataLoaded) 60.dp else 120.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color(0xFFFF69B4), Color(0xFF8A2BE2)) // Pink to Purple gradient
+                )
+            )
+    ) {
+        Text(
+            "Upload PDF",
+            color = Color.White,
+            fontSize = if (isDataLoaded) 18.sp else 32.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
 
 // Utility to get the dynamic greeting message
 @Composable
@@ -223,46 +301,6 @@ fun getGreetingMessage(): String {
         in 0..11 -> "Good Morning"
         in 12..16 -> "Good Afternoon"
         else -> "Good Evening"
-    }
-}
-
-@Composable
-fun FacultyCard(faculty: FacultyMember) {
-    // Animated appearance for faculty cards
-    AnimatedVisibility(
-        visible = true,
-        enter = slideInVertically() + fadeIn(),
-        exit = slideOutVertically() + fadeOut()
-    ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFE6E6E6)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-        ) {
-            Column(modifier = Modifier.padding(24.dp)) {
-                Text(
-                    text = faculty.name,
-                    color = Color(0xFF4A5CFF),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    text = "Employee ID: ${faculty.employeeId}",
-                    color = Color.Gray,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Similarity Score: ${faculty.similarityScore}",
-                    color = Color.Black,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
     }
 }
 
@@ -298,43 +336,55 @@ suspend fun uploadPdf(context: Context, uri: Uri, apiLink: String, onResult: (Ap
         onResult(ApiResponse("Upload failed: ${e.message}", listOf()))
     }
 }
-
 @Composable
 fun BottomNavigationBar(navController: NavHostController) {
-    val items = listOf("Home", "Search", "Upload", "Profile")
+    val items = listOf(
+        Triple("Home", Icons.Default.Home, "screen_0"),
+        Triple("Search", Icons.Default.Search, "screen_1"),
+        Triple("Upload", Icons.Default.Add, "screen_2"),
+        Triple("Profile", Icons.Default.Person, "screen_3")
+    )
 
-    Surface(
+    Box(
         modifier = Modifier
-            .padding(top = 8.dp, start = 8.dp, end = 8.dp)
-            .clip(RoundedCornerShape(24.dp)) // Apply rounded corners
-            .fillMaxWidth(),
-        color = Color(0xFF4A5CFF), // Blue background color
-        tonalElevation = 8.dp, // Slight elevation for the "floating" effect
-    ) {
-        NavigationBar(
-            containerColor = Color.Transparent, // Transparent as the Surface provides color
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            items.forEachIndexed { index, label ->
-                NavigationBarItem(
-                    icon = { Text(label) }, // Placeholder for icons
-                    label = { Text(label) },
-                    selected = false, // Handle selected state if needed
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Color.White,
-                        selectedTextColor = Color.White,
-                        unselectedIconColor = Color.LightGray,
-                        unselectedTextColor = Color.LightGray
-                    ),
-                    onClick = {
-                        navController.navigate("screen_$index") // Define the navigation logic here
-                    }
+            .padding(top = 8.dp, start = 8.dp, end = 8.dp, bottom = 8.dp)
+            .clip(RoundedCornerShape(24.dp))
+            .background(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color(0xFFFF69B4), Color(0xFF8A2BE2))
                 )
+            )
+    ) {
+        Surface(
+            modifier = Modifier
+                .padding(2.dp)
+                .fillMaxWidth(),
+            color = Color(0xFF222222),
+            shape = RoundedCornerShape(22.dp),
+        ) {
+            NavigationBar(
+                containerColor = Color.Transparent,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items.forEach { (label, icon, route) ->
+                    NavigationBarItem(
+                        icon = { Icon(icon, contentDescription = label) },
+                        label = { Text(label) },
+                        selected = false,
+                        onClick = { navController.navigate(route) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFFBB86FC),
+                            selectedTextColor = Color(0xFFBB86FC),
+                            unselectedIconColor = Color.Gray,
+                            unselectedTextColor = Color.Gray,
+                            indicatorColor = Color(0xFF333333)
+                        )
+                    )
+                }
             }
         }
     }
 }
-
 
 private fun getFileFromUri(context: Context, uri: Uri): File {
     val contentResolver = context.contentResolver

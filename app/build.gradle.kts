@@ -100,6 +100,8 @@ dependencies {
     implementation(libs.retrofit) // Retrofit dependency
     implementation(libs.converter.gson)
     implementation(kotlin("script-runtime"))
+    implementation ("com.google.accompanist:accompanist-flowlayout:0.30.1")
+
 
 
 }
